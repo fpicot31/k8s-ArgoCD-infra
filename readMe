@@ -1,4 +1,4 @@
-#### installer argo ####
+#### installer argo  ####
 
 kubectl create namespace argocd
 
