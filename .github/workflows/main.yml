@@ -3,7 +3,7 @@ name: Mon premier workflow
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   build:
