@@ -3,30 +3,40 @@ kind: CronJob
 metadata:
   name: mongodb-backup
 spec:
-  schedule: "* * * * *"
+  schedule: "0 1 * * *"
   jobTemplate:
     spec:
       template:
         spec:
-          restartPolicy: OnFailure
           containers:
-            - name: mongodb-backup
-              image: bitnami/mongodb
-              command:
-                - "/bin/sh"
-                - "-c"
-                - |
-                  echo "Création du dump..."
-                  mongodump --uri="mongodb://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}" --out=/tmp/dump
-                  echo "Dump créé !"
-              env:
-                - name: MONGODB_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: mongodb
-                      key: mongodb-root-password
-                - name: MONGODB_HOST
-                  value: mongodb-headless:27017
-                - name: MONGODB_USER
-                  value: root
- 
+          - name: mongodb-backup
+            image: atos06/backupmongodbgcs
+            command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              echo "Authentification sur GCS..."
+              gcloud auth activate-service-account --key-file=/etc/gcs-credentials/service-account.json
+              echo "Lancement de mongodump..."
+              mongodump --uri="mongodb://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_HOST}" --archive="/tmp/dump.gz" --gzip
+              echo "Upload du dump sur GCS..."
+              gsutil cp -r /tmp/dump.gz gs://backup-mongodb-cformidable
+              echo "Upload finished !"
+            env:
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb
+                  key: mongodb-root-password
+            - name: MONGODB_HOST
+              value: mongodb-headless:27017
+            - name: MONGODB_USER
+              value: root
+            volumeMounts:
+            - name: gcs-credentials
+              mountPath: /etc/gcs-credentials
+          volumes:
+          - name: gcs-credentials
+            secret:
+              secretName: gcs-credentials
+          restartPolicy: OnFailure

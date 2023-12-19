@@ -1,13 +1,13 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: vue-auth11
+  name: vue-auth
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/fpicot31/k8s-ArgoCD-infra.git
-    targetRevision: master
+    targetRevision: HEAD
     path: k8s
   destination:
     server: https://kubernetes.default.svc
